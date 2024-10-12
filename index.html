@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dino Catch Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-image: url('images/background.jpg'); /* Path to your background image */
+      background-size: cover; /* Make the image cover the entire background */
+      background-position: center; /* Center the background image */
+    }
+    #peppa {
+      position: absolute;
+      bottom: 0;
+      left: 160px; /* Adjust Peppa's position as needed */
+      width: 250px; /* Width of Peppa */
+      user-select: none; /* Prevent text selection */
+    }
+    #dino {
+      position: absolute;
+      width: 100px; /* Width of Dino */
+      top: 0; /* Start position for Dino */
+    }
+    #startVideo {
+      position: absolute;
+      top: 50%; /* Center vertically */
+      left: 50%; /* Center horizontally */
+      transform: translate(-50%, -50%); /* Adjust for exact centering */
+      width: 20%; /* Adjust width as needed */
+      cursor: pointer; /* Change cursor to pointer on hover */
+    }
+    #score {
+      position: absolute;
+      top: 10px; /* Position from the top */
+      right: 10px; /* Position from the right */
+      color: black; /* Change color as needed */
+      font-size: 50px; /* Font size for the score */
+      z-index: 1; /* Ensure it's on top of other elements */
+    }
+  </style>
+</head>
+<body>
+  <img id="peppa" src="images/peppa.png" alt="Peppa" />
+  <img id="dino" src="images/dino.png" alt="Dino" />
+  
+  <audio id="catch-sound" src="sounds/myCatchSound.mp3" preload="auto"></audio>
+  <audio id="gameover-sound" src="sounds/myGameOverSound.mp3" preload="auto"></audio>
+  <audio id="background-music" src="sounds/backgroundMusic.mp3" preload="auto" loop></audio>
+  
+  <video id="startVideo" src="videos/startVideo.mp4" autoplay loop muted></video> <!-- Start button video -->
+  
+  <div id="score">Score: 0</div> <!-- Score Display -->
+
+  <script>
+    let dinoPosition = { x: Math.random() * 370, y: 0 };
+    let score = 0;
+    let speed = 10; // Initial speed for falling dino
+    let gameInterval;
+
+    const peppa = document.getElementById('peppa');
+    const dino = document.getElementById('dino');
+    const catchSound = document.getElementById('catch-sound');
+    const gameOverSound = document.getElementById('gameover-sound'); // Game over sound
+    const backgroundMusic = document.getElementById('background-music');
+    const scoreDisplay = document.getElementById('score');
+
+    backgroundMusic.volume = 0.2; // Lower volume for background music
+
+    function startGame() {
+      document.getElementById('startVideo').style.display = 'none'; // Hide the start video
+      dino.style.display = 'block'; // Show the dino
+      resetDino(); // Reset dino position
+      backgroundMusic.play(); // Start playing background music
+
+      // Start the game loop
+      gameInterval = setInterval(gameLoop, 100); // Call gameLoop every 100 ms
+    }
+
+    function gameLoop() {
+      // Move the dino down
+      dinoPosition.y += speed;
+      dino.style.top = dinoPosition.y + 'px';
+
+      // Update the score display
+      scoreDisplay.textContent = `Score: ${score}`;
+
+      // Check if the dino falls off the screen
+      if (dinoPosition.y > window.innerHeight) {
+        gameOver(); // Call game over function if dino falls off
+      }
+
+      // Check for collision with Peppa
+      if (isColliding(peppa, dino)) {
+        catchSound.play();
+        score++;
+        resetDino(); // Reset dino position after catching
+      }
+
+      // Increase speed every 20 seconds
+      if (Math.floor(score / 20) > 0) {
+        speed += 10; // Increase speed slightly
+      }
+    }
+
+    function resetDino() {
+      dinoPosition.y = 0; // Reset to the top
+      // Set dino position to a new random horizontal location
+      dinoPosition.x = Math.random() * (window.innerWidth - 50); // Subtract dino width to keep it inside the screen
+      dino.style.left = dinoPosition.x + 'px'; // Position the dino randomly at the top
+      dino.style.top = dinoPosition.y + 'px'; // Ensure dino is at the top
+    }
+
+    function isColliding(peppa, dino) {
+      const peppaRect = peppa.getBoundingClientRect();
+      const dinoRect = dino.getBoundingClientRect();
+      return !(
+        peppaRect.top > dinoRect.bottom ||
+        peppaRect.bottom < dinoRect.top ||
+        peppaRect.right < dinoRect.left ||
+        peppaRect.left > dinoRect.right
+      );
+    }
+
+    // Function to handle game over
+    function gameOver() {
+      clearInterval(gameInterval); // Stop the game loop
+      gameOverSound.play(); // Play the game over sound
+      alert('Game Over! Your score: ' + score); // Alert the score (or implement a better UI for game over)
+      resetGame(); // Reset the game
+    }
+
+    // Function to reset the game
+    function resetGame() {
+      score = 0;
+      speed = 10; // Reset speed
+      dino.style.display = 'none'; // Hide dino
+      document.getElementById('startVideo').style.display = 'block'; // Show start video again
+      backgroundMusic.pause(); // Stop background music
+      backgroundMusic.currentTime = 0; // Reset background music time
+    }
+
+    // Function to move Peppa with touch events
+    function movePeppa(event) {
+      const touch = event.touches[0]; // Get the first touch point
+      const peppaWidth = peppa.offsetWidth;
+      const newX = touch.clientX - peppaWidth / 2; // Center Peppa on the touch point
+
+      // Constrain Peppa's movement within the screen
+      if (newX >= 0 && newX <= window.innerWidth - peppaWidth) {
+        peppa.style.left = newX + 'px'; // Move Peppa
+      }
+    }
+
+    // Event listener to start the game when the video is clicked
+    document.getElementById('startVideo').addEventListener('click', startGame);
+    
+    // Add touchmove event listener for mobile
+    document.addEventListener('touchmove', movePeppa);
+  </script>
+</body>
+</html>
